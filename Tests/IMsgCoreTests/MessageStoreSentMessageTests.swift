@@ -58,6 +58,59 @@ func latestSentMessageMatchesNewestOutgoingTextInChat() throws {
 }
 
 @Test
+func latestSentMessageMatchesCanonicallyEquivalentText() throws {
+  let db = try makeSentMessageDatabase()
+  let now = Date()
+  let sentText = "Schöne Grüße"
+  try insertSentMessageFixture(
+    db,
+    rowID: 1,
+    chatID: 1,
+    text: sentText.decomposedStringWithCanonicalMapping,
+    guid: "decomposed-guid",
+    date: now,
+    isFromMe: true
+  )
+  let store = try MessageStore(connection: db, path: ":memory:")
+
+  let message = try store.latestSentMessage(
+    matchingText: sentText,
+    chatID: 1,
+    since: now.addingTimeInterval(-1)
+  )
+
+  #expect(message?.guid == "decomposed-guid")
+  #expect(message?.text == sentText)
+}
+
+@Test
+func latestSentMessageMatchesMixedNormalizationText() throws {
+  let db = try makeSentMessageDatabase()
+  let now = Date()
+  let sentText = "Café mañana"
+  let mixedText = "Cafe\u{301} mañana"
+  try insertSentMessageFixture(
+    db,
+    rowID: 1,
+    chatID: 1,
+    text: mixedText,
+    guid: "mixed-guid",
+    date: now,
+    isFromMe: true
+  )
+  let store = try MessageStore(connection: db, path: ":memory:")
+
+  let message = try store.latestSentMessage(
+    matchingText: sentText,
+    chatID: 1,
+    since: now.addingTimeInterval(-1)
+  )
+
+  #expect(message?.guid == "mixed-guid")
+  #expect(message?.text == sentText)
+}
+
+@Test
 func latestSentMessageFallsBackToNewestOutgoingTextWithoutChatFilter() throws {
   let db = try makeSentMessageDatabase()
   let now = Date()

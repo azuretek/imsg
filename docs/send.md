@@ -100,7 +100,7 @@ Defaults to `US`. Pass an ISO 3166-1 alpha-2 country code to normalize locally-f
 Default text mode prints `sent` on success. JSON mode emits `{"status":"sent"}`.
 
 When `chat.db` is readable, every AppleScript text send waits up to eight
-seconds for the matching outgoing row. If Messages reports success but no row
+seconds for the matching outgoing row. Text matching accepts canonically equivalent Unicode forms, so precomposed and decomposed accented characters verify identically. If Messages reports success but no row
 appears, `imsg` returns `may_have_completed` with no-retry guidance instead of
 reporting success. The lookup is scoped to the actual send route; after a safe SMS fallback, it verifies the SMS chat and reports that message's ID and service. A new recipient's chat must become visible before its text can be confirmed. Direct sends still retain the
 previous accepted behavior when the database is unavailable. Attachment-only

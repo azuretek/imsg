@@ -110,10 +110,9 @@ struct LatestSentMessageQuery {
   let selection: MessageRowSelection
   let fallbackChatID: Int64?
 
-  init(store: MessageStore, text: String, chatID: ChatID?, since date: Date) throws {
+  init(store: MessageStore, chatID: ChatID?, since date: Date) throws {
     self.selection = MessageRowSelection(
       store: store, chatIDColumn: chatID == nil ? MessageRowSelection.canonicalChatID : nil)
-    let bodyColumn = store.schema.hasAttributedBody ? "m.attributedBody" : "NULL"
     var sql = """
       SELECT \(selection.selectList)
       FROM message m
@@ -121,12 +120,8 @@ struct LatestSentMessageQuery {
       LEFT JOIN handle h ON m.handle_id = h.ROWID
       WHERE m.is_from_me = 1
         AND m.date >= ?
-        AND (
-          IFNULL(m.text, '') = ?
-          OR (IFNULL(m.text, '') = '' AND \(bodyColumn) IS NOT NULL)
-        )
       """
-    var bindings: [Binding?] = [try MessageStore.appleEpoch(date), text]
+    var bindings: [Binding?] = [try MessageStore.appleEpoch(date)]
     if let chatID {
       sql += " AND cmj.chat_id = ?"
       bindings.append(chatID.rawValue)

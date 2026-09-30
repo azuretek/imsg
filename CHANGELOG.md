@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Confirm sent text across canonically equivalent Unicode forms, including accented and mixed-normalization text (#320, #321, thanks @privateloris and @goutamadwant).
+
 ## 0.15.9 - 2026-09-24
 
 **Highlights:** Restored standard Tapback navigation on macOS 27 with verified conversation focus and picker controls.

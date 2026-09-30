@@ -261,7 +261,6 @@ extension MessageStore {
 
     let query = try LatestSentMessageQuery(
       store: self,
-      text: text,
       chatID: chatID.map { ChatID(rawValue: $0) },
       since: date
     )
