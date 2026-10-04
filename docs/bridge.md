@@ -79,7 +79,7 @@ imsg tapback --chat 'iMessage;-;+15551234567' \
   --message <message-guid> --kind love --remove
 ```
 
-A custom emoji is sent with `--emoji` in place of `--kind` (and removed with `--remove`). This needs the running bridge to report `selectors.emojiTapbackSend`; `imsg status --json` lists `tapback.emoji` in `rpc_features` when it does:
+A custom emoji is sent with `--emoji` in place of `--kind` (and removed with `--remove`). This needs the running bridge to report `selectors.emojiTapbackSend`; `imsg status --json` lists `capabilities.features["tapback.emoji"]` as version 2 when it does:
 
 ```bash
 imsg tapback --chat 'iMessage;-;+15551234567' \

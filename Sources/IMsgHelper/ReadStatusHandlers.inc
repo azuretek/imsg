@@ -257,7 +257,7 @@ static NSDictionary* handleStatus(NSInteger requestId, NSDictionary *params) {
         && stickerAssociatedMessageInitializerAvailable();
     // Arbitrary emoji tapbacks go through IMEmojiTapback + IMTapbackSender
     // rather than the classic IMMessage path, so they are a separate
-    // capability and are advertised separately (see rpc_features).
+    // capability and are advertised separately (see the capabilities block).
     Class emojiTapbackClass = NSClassFromString(@"IMEmojiTapback");
     Class tapbackSenderClass = NSClassFromString(@"IMTapbackSender");
     BOOL emojiTapbackSend =

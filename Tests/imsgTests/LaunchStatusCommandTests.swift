@@ -177,7 +177,7 @@ func statusReportsHelperVersionMismatch(version: String?, json: Bool) async thro
 }
 
 @Test
-func statusAdvertisesEmojiTapbackFeatureOnlyWhenTheHelperSupportsIt() async throws {
+func statusAdvertisesVersionedEmojiTapbackCapabilityOnlyWhenTheHelperSupportsIt() async throws {
   let values = ParsedValues(positional: [], options: [:], flags: ["jsonOutput"])
   let runtime = RuntimeOptions(parsedValues: values)
 
@@ -192,9 +192,10 @@ func statusAdvertisesEmojiTapbackFeatureOnlyWhenTheHelperSupportsIt() async thro
         ]
       })
   }
-  #expect(withFeature.contains(#""rpc_features":["tapback.emoji"]"#))
+  #expect(withFeature.contains("\"capabilities\""))
+  #expect(withFeature.contains("\"tapback.emoji\":2"))
 
-  // The control: without the helper selector the feature is not advertised, so
+  // The control: without the helper selector the capability is not advertised, so
   // a client keeps the six classic kinds.
   let (withoutFeature, _) = try await StdoutCapture.capture {
     try await StatusCommand.run(
@@ -207,6 +208,6 @@ func statusAdvertisesEmojiTapbackFeatureOnlyWhenTheHelperSupportsIt() async thro
         ]
       })
   }
-  #expect(withoutFeature.contains(#""rpc_features":[]"#))
+  #expect(withoutFeature.contains("\"capabilities\""))
   #expect(!withoutFeature.contains("tapback.emoji"))
 }
