@@ -77,7 +77,11 @@ static NSDictionary *handleSendReaction(NSInteger requestId, NSDictionary *param
                     [senderClass instanceMethodSignatureForSelector:senderPartSel];
                 NSInvocation *sinv = [NSInvocation invocationWithMethodSignature:ssig];
                 [sinv setSelector:senderPartSel];
-                [sinv setTarget:[senderClass alloc]];
+                // Keep the target in a strong local: NSInvocation does not retain
+                // its target until -retainArguments, and an ARC temporary from
+                // `[senderClass alloc]` is released at the end of this statement.
+                id senderAlloc = [senderClass alloc];
+                [sinv setTarget:senderAlloc];
                 [sinv setArgument:&tapback atIndex:2];
                 [sinv setArgument:&chat atIndex:3];
                 [sinv setArgument:&parentChatItem atIndex:4];
@@ -88,7 +92,8 @@ static NSDictionary *handleSendReaction(NSInteger requestId, NSDictionary *param
                     [senderClass instanceMethodSignatureForSelector:senderRangeSel];
                 NSInvocation *sinv = [NSInvocation invocationWithMethodSignature:ssig];
                 [sinv setSelector:senderRangeSel];
-                [sinv setTarget:[senderClass alloc]];
+                id senderAlloc = [senderClass alloc];
+                [sinv setTarget:senderAlloc];
                 [sinv setArgument:&tapback atIndex:2];
                 [sinv setArgument:&chat atIndex:3];
                 [sinv setArgument:&selectedMessageGuid atIndex:4];
