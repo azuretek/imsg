@@ -51,6 +51,18 @@ struct BridgeHelperLocatorTests {
     #expect(message.contains(missing))
   }
 
+  @Test("a missing sibling names the setting and the path it checked")
+  func missingSiblingNamesSettingAndPath() throws {
+    let directory = try temporaryDirectory()
+    let executable = directory.appendingPathComponent("imsg")
+    let lookup = BridgeHelperLocator.lookup(configured: nil, executableURL: executable)
+    #expect(lookup?.resolved == false)
+
+    let message = BridgeHelperLocator.failureMessage(lookup)
+    #expect(message.contains(BridgeHelperLocator.configuredPathKey))
+    #expect(message.contains(BridgeHelperLocator.siblingPath(executableURL: executable)))
+  }
+
   @Test("a missing configured value is not substituted by an existing sibling")
   func noFallbackToSibling() throws {
     let directory = try temporaryDirectory()

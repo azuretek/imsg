@@ -40,7 +40,7 @@ command fails without sending the URL as a plain message.
 
 ## Why they're separate
 
-These features depend on private IMCore APIs that aren't reachable from outside the Messages process. To touch them, `imsg` injects a small helper dylib into Messages.app via `DYLD_INSERT_LIBRARIES`. Homebrew installs that helper when the release archive includes it; source builds can create it with `make build-dylib`.
+These features depend on private IMCore APIs that aren't reachable from outside the Messages process. To touch them, `imsg` injects a small helper dylib into Messages.app via `DYLD_INSERT_LIBRARIES`. The helper is `imsg-bridge-helper.dylib`; release archives install it beside the `imsg` binary, and source builds create it with `make build-dylib`.
 
 That injection requires three things to be true on the target machine:
 
@@ -62,6 +62,15 @@ Source installs need one extra step first:
 ```bash
 make build-dylib   # produces .build/release/imsg-bridge-helper.dylib (arm64e)
 ```
+
+### Where the helper is found
+
+The helper's location is a single chosen value, never a list of places to try. In order:
+
+1. `--dylib <path>` on `imsg launch`, or the `IMSG_BRIDGE_HELPER_DYLIB` environment variable (the flag wins when both are set). This is the configuration; point it at a helper you built or deployed elsewhere.
+2. Otherwise the sibling default: `imsg-bridge-helper.dylib` next to the running `imsg` binary. `make build` and release archives place the helper there, so a normal build needs no configuration.
+
+There is no fallback beyond that: Homebrew, `/usr/local/lib`, and `.build` are never searched. When the configured value does not exist, the command fails and names the setting, the value it held, and the path it checked; it never injects a different helper.
 
 Resolved native replies use ordinary message construction with a native thread
 identifier, so their outgoing bubbles remain visible in Messages. Maintainers
@@ -175,11 +184,12 @@ user request and a confirmed destination.
 
 ```bash
 imsg launch --dylib /path/to/custom.dylib
+IMSG_BRIDGE_HELPER_DYLIB=/path/to/custom.dylib imsg launch
 imsg launch --kill-only           # quit Messages without launching
 imsg launch --json                # machine-readable launch result
 ```
 
-`--kill-only` is the inverse: it tears Messages down (to drop a stale injection) without relaunching.
+`--dylib` and `IMSG_BRIDGE_HELPER_DYLIB` name the same single source; `--dylib` wins when both are set. `--kill-only` is the inverse: it tears Messages down (to drop a stale injection) without relaunching.
 
 ## When to use any of this
 
