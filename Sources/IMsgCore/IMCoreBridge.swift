@@ -75,8 +75,7 @@ public final class IMCoreBridge: @unchecked Sendable {
       return (
         false,
         """
-        imsg-bridge-helper.dylib not found. Searched:
-        \(BridgeHelperLocator.searchPaths().map { "- \($0)" }.joined(separator: "\n"))
+        \(BridgeHelperLocator.failureMessage(BridgeHelperLocator.lookup()))
 
         Source installs can build it with `make build-dylib`.
 
