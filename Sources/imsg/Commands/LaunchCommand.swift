@@ -92,14 +92,16 @@ enum LaunchCommand {
       break
     }
 
-    let dylibPath = resolveDylibPath(custom: customDylib)
+    let lookup = BridgeHelperLocator.lookup(
+      configured: customDylib
+        ?? ProcessInfo.processInfo.environment[BridgeHelperLocator.configuredPathKey]
+    )
 
-    guard let resolvedPath = dylibPath else {
+    guard let resolvedPath = (lookup?.resolved == true ? lookup?.checked : nil) else {
       let error =
-        "imsg-bridge-helper.dylib not found. Searched:\n"
-        + BridgeHelperLocator.searchPaths().map { "  - \($0)" }.joined(separator: "\n")
+        BridgeHelperLocator.failureMessage(lookup)
         + "\n"
-        + "Run 'make build-dylib' or specify --dylib <path>"
+        + "Set \(BridgeHelperLocator.configuredPathKey) or pass --dylib <path>"
 
       if runtime.jsonOutput {
         try JSONLines.print(["status": "error", "error": "dylib_not_found", "message": error])
@@ -158,7 +160,4 @@ enum LaunchCommand {
     }
   }
 
-  private static func resolveDylibPath(custom: String?) -> String? {
-    BridgeHelperLocator.resolve(customPath: custom)
-  }
 }

@@ -6,7 +6,7 @@
   public final class MessagesLauncher: @unchecked Sendable {
     public static let shared = MessagesLauncher()
 
-    public var dylibPath: String = ".build/release/imsg-bridge-helper.dylib"
+    public var dylibPath: String = ""
     public var bridgeInboxDirectory: String { "/nonexistent/.imsg-rpc/in" }
     public var bridgeOutboxDirectory: String { "/nonexistent/.imsg-rpc/out" }
     public var bridgeEventsFile: String { "/nonexistent/.imsg-events.jsonl" }

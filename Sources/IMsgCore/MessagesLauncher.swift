@@ -60,7 +60,7 @@ import Foundation
     private let launchOverride: (() throws -> Void)?
 
     /// Path to the dylib to inject.
-    public var dylibPath: String = ".build/release/imsg-bridge-helper.dylib"
+    public var dylibPath: String = ""
 
     init(
       containerPath: String? = nil,

@@ -21,10 +21,12 @@ func imCoreBridgeCheckAvailabilityReturnsDiagnostic() {
 }
 
 @Test
-func messagesLauncherSharedInstanceExists() {
+func messagesLauncherDefaultsToTheSingleResolverSource() {
   let launcher = MessagesLauncher.shared
-  // Verify the launcher can be accessed
-  #expect(launcher.dylibPath.contains("imsg-bridge-helper.dylib"))
+  // The launcher carries no path of its own: its default is the one value
+  // BridgeHelperLocator chooses - the configured helper, else the sibling beside
+  // the running binary. There is no fallback list that could disagree.
+  #expect(launcher.dylibPath == (BridgeHelperLocator.resolve() ?? ""))
 }
 
 @Test
