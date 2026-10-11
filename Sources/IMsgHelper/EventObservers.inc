@@ -10,7 +10,6 @@
 // -[IMChat _handleIncomingItem:]; the bridge wraps that method and reports
 // started-typing / stopped-typing from the item itself, logging only the item's
 // class, never its content.
-static IMP gOrigHandleIncomingItem = NULL;
 
 static void reportIncomingTypingItem(id chat, id item) {
     if (!item) return;
@@ -26,6 +25,14 @@ static void reportIncomingTypingItem(id chat, id item) {
         fromMe = ((BOOL (*)(id, SEL))objc_msgSend)(item, @selector(isFromMe));
     }
     if (fromMe) return;
+    // The variants call one another, so one item reaches this more than once; it is reported once.
+    static __weak id lastItem = nil;
+    static BOOL lastCancel = NO;
+    @synchronized ([NSObject class]) {
+        if (lastItem == item && lastCancel == cancel) return;
+        lastItem = item;
+        lastCancel = cancel;
+    }
     NSString *chatGuid = nil;
     if (chat && [chat respondsToSelector:@selector(guid)]) {
         chatGuid = [chat performSelector:@selector(guid)];
@@ -37,26 +44,64 @@ static void reportIncomingTypingItem(id chat, id item) {
     });
 }
 
-static BOOL imsgHandleIncomingItem(id self, SEL _cmd, id item) {
-    BOOL handled = ((BOOL (*)(id, SEL, id))gOrigHandleIncomingItem)(self, _cmd, item);
-    @try {
-        reportIncomingTypingItem(self, item);
-    } @catch (__unused id e) {
-    }
-    return handled;
+// Messages hands an incoming item to whichever of these variants this macOS uses (on macOS 26 the longest), so each
+// one present is wrapped. Each is installed only when its type encoding is a BOOL result with an object and BOOL
+// arguments, the shape the wrapper calls it with; any other shape is logged and left alone.
+static IMP gOrigIncoming[5];
+
+static BOOL imsgIncoming1(id self, SEL _cmd, id item) {
+    BOOL r = ((BOOL (*)(id, SEL, id))gOrigIncoming[0])(self, _cmd, item);
+    @try { reportIncomingTypingItem(self, item); } @catch (__unused id e) {}
+    return r;
+}
+static BOOL imsgIncoming2(id self, SEL _cmd, id item, BOOL a) {
+    BOOL r = ((BOOL (*)(id, SEL, id, BOOL))gOrigIncoming[1])(self, _cmd, item, a);
+    @try { reportIncomingTypingItem(self, item); } @catch (__unused id e) {}
+    return r;
+}
+static BOOL imsgIncoming3(id self, SEL _cmd, id item, BOOL a, BOOL b) {
+    BOOL r = ((BOOL (*)(id, SEL, id, BOOL, BOOL))gOrigIncoming[2])(self, _cmd, item, a, b);
+    @try { reportIncomingTypingItem(self, item); } @catch (__unused id e) {}
+    return r;
+}
+static BOOL imsgIncoming4(id self, SEL _cmd, id item, BOOL a, BOOL b, BOOL c) {
+    BOOL r = ((BOOL (*)(id, SEL, id, BOOL, BOOL, BOOL))gOrigIncoming[3])(self, _cmd, item, a, b, c);
+    @try { reportIncomingTypingItem(self, item); } @catch (__unused id e) {}
+    return r;
+}
+static BOOL imsgIncoming5(id self, SEL _cmd, id item, BOOL a, BOOL b, BOOL c, BOOL d) {
+    BOOL r = ((BOOL (*)(id, SEL, id, BOOL, BOOL, BOOL, BOOL))gOrigIncoming[4])(self, _cmd, item, a, b, c, d);
+    @try { reportIncomingTypingItem(self, item); } @catch (__unused id e) {}
+    return r;
 }
 
 static void installIncomingTypingHook(void) {
-    if (gOrigHandleIncomingItem) return;
     Class chatClass = NSClassFromString(@"IMChat");
-    SEL sel = NSSelectorFromString(@"_handleIncomingItem:");
-    Method m = chatClass ? class_getInstanceMethod(chatClass, sel) : NULL;
-    if (!m) {
-        debugLog(@"incoming typing: -[IMChat _handleIncomingItem:] not found");
-        return;
+    if (!chatClass) return;
+    const char *sels[5] = {
+        "_handleIncomingItem:",
+        "_handleIncomingItem:updateRecipient:",
+        "_handleIncomingItem:updateRecipient:suppressNotification:",
+        "_handleIncomingItem:updateRecipient:suppressNotification:updateReplyCounts:",
+        "_handleIncomingItem:updateRecipient:suppressNotification:updateReplyCounts:messageComingFromStorage:",
+    };
+    IMP impls[5] = { (IMP)imsgIncoming1, (IMP)imsgIncoming2, (IMP)imsgIncoming3, (IMP)imsgIncoming4, (IMP)imsgIncoming5 };
+    for (int i = 0; i < 5; i++) {
+        if (gOrigIncoming[i]) continue;
+        Method m = class_getInstanceMethod(chatClass, sel_registerName(sels[i]));
+        if (!m) continue;
+        const char *enc = method_getTypeEncoding(m);
+        NSString *shape = [[NSString stringWithUTF8String:enc ?: ""] stringByTrimmingCharactersInSet:[NSCharacterSet decimalDigitCharacterSet]];
+        NSString *clean = [[shape componentsSeparatedByCharactersInSet:[NSCharacterSet decimalDigitCharacterSet]] componentsJoinedByString:@""];
+        NSMutableString *want = [NSMutableString stringWithString:@"B@:@"];
+        for (int k = 0; k < i; k++) [want appendString:@"B"];
+        if (![clean isEqualToString:want]) {
+            debugLog(@"incoming typing: %s has shape %@, not hooked", sels[i], clean);
+            continue;
+        }
+        gOrigIncoming[i] = method_setImplementation(m, impls[i]);
+        debugLog(@"incoming typing: hooked -[IMChat %s]", sels[i]);
     }
-    gOrigHandleIncomingItem = method_setImplementation(m, (IMP)imsgHandleIncomingItem);
-    debugLog(@"incoming typing: hooked -[IMChat _handleIncomingItem:]");
 }
 
 // The event log exists from the start, so imsg rpc advertises bridge.events.subscribe
