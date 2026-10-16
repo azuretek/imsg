@@ -33,6 +33,14 @@ struct ChatMessagesQuery {
     var bindings: [Binding?] = [chatID.rawValue]
 
     if let filter {
+      if let before = filter.before {
+        sql += " AND (COALESCE(m.date, 0), m.ROWID) < (?, ?)"
+        bindings.append(contentsOf: [before.timestamp, before.rowID])
+      }
+      if let after = filter.after {
+        sql += " AND (COALESCE(m.date, 0), m.ROWID) > (?, ?)"
+        bindings.append(contentsOf: [after.timestamp, after.rowID])
+      }
       if let startDate = filter.startDate {
         sql += " AND m.date >= ?"
         bindings.append(try MessageStore.appleEpoch(startDate))
@@ -52,7 +60,10 @@ struct ChatMessagesQuery {
       }
     }
 
-    sql += " ORDER BY m.date DESC, m.ROWID DESC LIMIT ?"
+    sql +=
+      filter?.after != nil
+      ? " ORDER BY COALESCE(m.date, 0) ASC, m.ROWID ASC LIMIT ?"
+      : " ORDER BY COALESCE(m.date, 0) DESC, m.ROWID DESC LIMIT ?"
     bindings.append(limit)
 
     self.sql = sql

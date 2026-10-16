@@ -35,6 +35,23 @@ imsg history --chat-id 42 --start 2026-05-01T00:00:00Z --json
 imsg history --chat-id 42 --end 2026-05-06T00:00:00Z --json
 ```
 
+## RPC cursor pagination
+
+The `messages.history` RPC accepts one optional `before_cursor` or `after_cursor`.
+Copy the opaque string from a message's `history_cursor`; do not derive it from
+`created_at`. It preserves the database timestamp and unique row ID without
+floating-point or ISO date rounding. The ordinary first page and `before_cursor`
+pages are newest first. `after_cursor` returns the nearest newer messages in
+oldest-first order, so an evicted page can be fetched again without loading the
+whole conversation. Both bounds are exclusive.
+
+The result includes `has_more` in the requested direction and `next_cursor`
+for the last returned message (absent for an empty page). Continue with that
+cursor in the same direction. Equal timestamps are broken by row ID, so a page
+boundary neither skips nor repeats a tied message. Cursors remain usable after
+their anchor message is deleted. Existing date and participant filters still
+apply. Invalid cursors or both cursor directions together are rejected.
+
 ## Participant filters
 
 For group chats, narrow to messages from specific people:

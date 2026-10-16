@@ -2,6 +2,13 @@ import Foundation
 import SQLite
 
 extension MessageStore {
+  public func historyCursor(for message: Message) throws -> HistoryCursor {
+    try withConnection { db in
+      let timestamp = try db.scalar("SELECT date FROM message WHERE ROWID = ?", message.rowID)
+      return HistoryCursor(timestamp: timestamp as? Int64 ?? 0, rowID: message.rowID)
+    }
+  }
+
   public func maxRowID() throws -> Int64 {
     return try withConnection { db in
       try db.scalar("SELECT MAX(ROWID) FROM message") as? Int64 ?? 0
@@ -52,22 +59,30 @@ extension MessageStore {
             guard let previous = try self.precedingTextMessageForURLPreview(preview, db: db) else {
               return nil
             }
-            if let filter, !filter.allows(previous) {
-              return nil
+            if let filter {
+              guard filter.allows(previous) else { return nil }
+              let cursor = try self.historyCursor(for: previous)
+              if let before = filter.before, cursor >= before { return nil }
+              if let after = filter.after, cursor <= after { return nil }
             }
             return .replace(previous)
           },
           fallbackReplacementUsed: {
             usedFallbackReplacement = true
           }
-        ).sorted(by: messageNewestFirst)
+        )
+        // Date loses sub-microsecond precision. Sort and page with the database integers instead.
+        let keyed = try coalesced.map { (message: $0, cursor: try historyCursor(for: $0)) }
+        let ordered = keyed.sorted {
+          filter?.after != nil ? $0.cursor < $1.cursor : $0.cursor > $1.cursor
+        }.map(\.message)
 
         if messages.count < physicalLimit || (coalesced.count >= limit && !usedFallbackReplacement)
         {
-          return Array(coalesced.prefix(limit))
+          return Array(ordered.prefix(limit))
         }
         guard let nextLimit = nextMessageQueryLimit(after: physicalLimit) else {
-          return Array(coalesced.prefix(limit))
+          return Array(ordered.prefix(limit))
         }
         physicalLimit = nextLimit
       }

@@ -4,11 +4,18 @@ public struct MessageFilter: Sendable, Equatable {
   public let participants: [String]
   public let startDate: Date?
   public let endDate: Date?
+  public let before: HistoryCursor?
+  public let after: HistoryCursor?
 
-  public init(participants: [String] = [], startDate: Date? = nil, endDate: Date? = nil) {
+  public init(
+    participants: [String] = [], startDate: Date? = nil, endDate: Date? = nil,
+    before: HistoryCursor? = nil, after: HistoryCursor? = nil
+  ) {
     self.participants = participants
     self.startDate = startDate
     self.endDate = endDate
+    self.before = before
+    self.after = after
   }
 
   public static func fromISO(participants: [String], startISO: String?, endISO: String?) throws
