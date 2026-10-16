@@ -18,6 +18,7 @@ struct MessageStoreSchema: Sendable {
   let hasChatAccountIDColumn: Bool
   let hasChatAccountLoginColumn: Bool
   let hasChatLastAddressedHandleColumn: Bool
+  let hasItemTypeColumn: Bool
   let hasIsReadColumn: Bool
   let hasDateReadColumn: Bool
 
@@ -48,6 +49,7 @@ struct MessageStoreSchema: Sendable {
     self.hasChatAccountIDColumn = chatColumns.contains("account_id")
     self.hasChatAccountLoginColumn = chatColumns.contains("account_login")
     self.hasChatLastAddressedHandleColumn = chatColumns.contains("last_addressed_handle")
+    self.hasItemTypeColumn = messageColumns.contains("item_type")
     self.hasIsReadColumn = messageColumns.contains("is_read")
     self.hasDateReadColumn = messageColumns.contains("date_read")
   }
@@ -94,6 +96,7 @@ struct MessageStoreSchema: Sendable {
     self.hasChatAccountLoginColumn = hasChatAccountLoginColumn ?? base.hasChatAccountLoginColumn
     self.hasChatLastAddressedHandleColumn =
       hasChatLastAddressedHandleColumn ?? base.hasChatLastAddressedHandleColumn
+    self.hasItemTypeColumn = base.hasItemTypeColumn
     self.hasIsReadColumn = hasIsReadColumn ?? base.hasIsReadColumn
     self.hasDateReadColumn = hasDateReadColumn ?? base.hasDateReadColumn
   }
