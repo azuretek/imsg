@@ -67,11 +67,13 @@ public enum BridgeHelperLocator {
     fileManager: FileManager = .default
   ) -> String? {
     let configured = customPath ?? ProcessInfo.processInfo.environment[configuredPathKey]
-    guard let result = lookup(
-      configured: configured,
-      executableURL: executableURL,
-      fileManager: fileManager
-    ), result.resolved else {
+    guard
+      let result = lookup(
+        configured: configured,
+        executableURL: executableURL,
+        fileManager: fileManager
+      ), result.resolved
+    else {
       return nil
     }
     return result.checked

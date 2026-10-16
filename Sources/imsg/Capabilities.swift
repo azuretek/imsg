@@ -19,7 +19,8 @@ struct EngineBuildIdentity: Encodable {
   }
 
   static var current: EngineBuildIdentity {
-    EngineBuildIdentity(version: IMsgVersion.current, commit: IMsgVersion.commit, builtAt: IMsgVersion.builtAt)
+    EngineBuildIdentity(
+      version: IMsgVersion.current, commit: IMsgVersion.commit, builtAt: IMsgVersion.builtAt)
   }
 
   var dictionary: [String: Any] { ["version": version, "commit": commit, "built_at": builtAt] }

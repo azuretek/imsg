@@ -113,7 +113,8 @@ enum StatusCommand {
         helperVersionMismatch: helperVersionMismatch,
         selectors: selectors,
         rpcMethods: advertisedRPCMethods(selectors: selectors),
-        capabilities: EngineCapabilities.current(emojiTapbackSend: selectors["emojiTapbackSend"] == true)
+        capabilities: EngineCapabilities.current(
+          emojiTapbackSend: selectors["emojiTapbackSend"] == true)
       )
       try JSONLines.print(payload)
     } else {
